@@ -14,7 +14,8 @@ env:
   # These packages will be allowed to compile from source. Native extension compilation is a code-execution
   # vector. Compilers, linkers, and build scripts are invoked; a hostile setup.py/backend can run shell
   # commands freely. Only add packages to this list if absolutely necessary.
-  ALLOW_SDIST_PACKAGES: "hausdorff,scikit-sparse,tinynumpy"
+  ALLOW_SDIST_PURE: "hausdorff,pydot3k,tinynumpy"
+  ALLOW_SDIST_NATIVE: "scikit-sparse"   # Behavior on user systems depends on the system
 
   # Excluded packages: explanations for inclusion in the list...
   #
@@ -77,12 +78,6 @@ jobs:
       
     steps:
     
-      - name: Install SuiteSparse for scikit-sparse (only when allowed)
-        if: contains(env.ALLOW_SDIST_PACKAGES, 'scikit-sparse')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libsuitesparse-dev
-
       - name: Exclude OpenEXR on py3.13 (no wheels yet)
         run: |
           if [[ "${{ matrix.python-version }}" == "3.13" ]]; then
@@ -118,15 +113,16 @@ jobs:
             { gsub(/^[[:space:]]+|[[:space:]]+$/,"",$0); print tolower($0) }
           ' ALLOWED_PYTHON_PACKAGES.txt > .allowed_names
 
-          # Parse ALLOW_SDIST_PACKAGES (comma-separated), validate names
-          IFS=',' read -ra WANT <<<"${ALLOW_SDIST_PACKAGES:-}"
+          IFS=',' read -ra NATIVE <<<"${ALLOW_SDIST_NATIVE:-}"
+          if (( ${#NATIVE[@]} )); then
+            sudo apt-get update
+            sudo apt-get install -y libsuitesparse-dev
+          fi
+          
+          # build pip args
           NO_BINARY_ARGS=()
-          for raw in "${WANT[@]}"; do
-            name="$(echo "$raw" | tr 'A-Z' 'a-z' | xargs)"
-            [[ -z "$name" ]] && continue
-            if [[ ! "$name" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]]; then
-              echo "::error::Invalid package name in ALLOW_SDIST_PACKAGES: '$name'"; exit 1
-            fi
+          for raw in $(echo "${ALLOW_SDIST_PURE},${ALLOW_SDIST_NATIVE}" | tr ',' ' '); do
+            name="$(echo "$raw" | tr 'A-Z' 'a-z' | xargs)"; [[ -z "$name" ]] && continue
             NO_BINARY_ARGS+=( "--no-binary=$name" )
           done
 

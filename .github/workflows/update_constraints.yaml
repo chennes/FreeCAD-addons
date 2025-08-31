@@ -73,21 +73,49 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           python -m venv .venv
           source .venv/bin/activate
           python -m pip install --upgrade pip
+
+          # Prepare allowlist for sdists:
+          # - Normalize allowed packages file to a lowercased list of names
+          awk '
+            /^[[:space:]]*$/ { next }
+            /^[[:space:]]*#/ { next }
+            { gsub(/^[[:space:]]+|[[:space:]]+$/,"",$0); print tolower($0) }
+          ' ALLOWED_PYTHON_PACKAGES.txt > .allowed_names
+
+          # Parse ALLOW_SDIST_PACKAGES (comma-separated), validate names, ensure each exists in allowed list
+          IFS=',' read -ra WANT <<<"${ALLOW_SDIST_PACKAGES:-}"
+          NO_BINARY_ARGS=()
+          for raw in "${WANT[@]}"; do
+            name="$(echo "$raw" | tr 'A-Z' 'a-z' | xargs)"
+            [[ -z "$name" ]] && continue
+            if [[ ! "$name" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]]; then
+              echo "::error::Invalid package name in ALLOW_SDIST_PACKAGES: '$name'"; exit 1
+            fi
+            if ! grep -Fxq "$name" .allowed_names; then
+              echo "::error::'$name' listed in ALLOW_SDIST_PACKAGES but not present (as a bare name) in ALLOWED_PYTHON_PACKAGES.txt"; exit 1
+            fi
+            NO_BINARY_ARGS+=( "--no-binary=$name" )
+          done
+
+          # Install: wheels-only for everything, except allowlisted sdists
           pip install \
             --require-virtualenv \
             --disable-pip-version-check \
             --no-cache-dir \
             --only-binary=:all: \
+            "${NO_BINARY_ARGS[@]}" \
             --index-url https://pypi.org/simple \
             -r ALLOWED_PYTHON_PACKAGES.txt
+
           py_tag=$(python -c 'import sys; print(f"py{sys.version_info.major}{sys.version_info.minor}")')
           out="constraints-${py_tag}.txt"
           pip freeze --exclude-editable > "$out"
           echo "ARTIFACT_NAME=$out" >> "$GITHUB_ENV"
-
+          
       - name: Upload constraints artifact
         uses: actions/upload-artifact@v4
         with:

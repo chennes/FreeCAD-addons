@@ -45,7 +45,6 @@ geomdl
 gmsh
 hausdorff
 idna
-ifc2osmd
 ifcopenshell
 ladybug-core
 ladybug-comfort

@@ -23,6 +23,7 @@
 PyOpenGL
 PyYAML
 aiofiles
+archaea
 asyncua
 atomicwrites
 autobahn
@@ -32,19 +33,19 @@ beautifulsoup4
 blinker
 capytaine
 certifi
-certify
 charset-normalizer
 comtypes
 distro
 docutils
 eppy
+epw
 etabs-api
 ezdxf
 geomdl
 gmsh
-gmsh-dev
 hausdorff
 idna
+ifc2osmd
 ifcopenshell
 ladybug-core
 ladybug-comfort
@@ -93,7 +94,6 @@ requests
 rhino3dm
 scikit-image
 scikit-learn
-scikit-sparse
 scipy
 sentry-sdk
 shapely
@@ -106,7 +106,7 @@ tzlocal
 urllib3
 vedo
 vermin
-wakatime-cli
+voxcity
 xgbxml
 xlrd
 xlutils

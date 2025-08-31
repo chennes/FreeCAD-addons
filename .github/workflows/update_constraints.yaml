@@ -83,10 +83,7 @@ jobs:
             --only-binary=:all: \
             --index-url https://pypi.org/simple \
             -r ALLOWED_PYTHON_PACKAGES.txt
-          py_tag=$(python - <<'PY'
-import sys; print(f"py{sys.version_info.major}{sys.version_info.minor}")
-PY
-)
+          py_tag=$(python -c 'import sys; print(f"py{sys.version_info.major}{sys.version_info.minor}")')
           out="constraints-${py_tag}.txt"
           pip freeze --exclude-editable > "$out"
           echo "ARTIFACT_NAME=$out" >> "$GITHUB_ENV"

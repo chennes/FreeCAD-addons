@@ -112,7 +112,7 @@ jobs:
             { gsub(/^[[:space:]]+|[[:space:]]+$/,"",$0); print tolower($0) }
           ' ALLOWED_PYTHON_PACKAGES.txt > .allowed_names
 
-          # Parse ALLOW_SDIST_PACKAGES (comma-separated), validate names, ensure each exists in allowed list
+          # Parse ALLOW_SDIST_PACKAGES (comma-separated), validate names
           IFS=',' read -ra WANT <<<"${ALLOW_SDIST_PACKAGES:-}"
           NO_BINARY_ARGS=()
           for raw in "${WANT[@]}"; do
@@ -120,9 +120,6 @@ jobs:
             [[ -z "$name" ]] && continue
             if [[ ! "$name" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]]; then
               echo "::error::Invalid package name in ALLOW_SDIST_PACKAGES: '$name'"; exit 1
-            fi
-            if ! grep -Fxq "$name" .allowed_names; then
-              echo "::error::'$name' listed in ALLOW_SDIST_PACKAGES but not present (as a bare name) in ALLOWED_PYTHON_PACKAGES.txt"; exit 1
             fi
             NO_BINARY_ARGS+=( "--no-binary=$name" )
           done

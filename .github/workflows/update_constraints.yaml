@@ -14,7 +14,7 @@ env:
   # These packages will be allowed to compile from source. Native extension compilation is a code-execution
   # vector. Compilers, linkers, and build scripts are invoked; a hostile setup.py/backend can run shell
   # commands freely. Only add packages to this list if absolutely necessary.
-  ALLOW_SDIST_PACKAGES: "hausdorff,scikit-sparse"
+  ALLOW_SDIST_PACKAGES: "hausdorff,scikit-sparse,tinynumpy"
 
   # Excluded packages: explanations for inclusion in the list...
   #

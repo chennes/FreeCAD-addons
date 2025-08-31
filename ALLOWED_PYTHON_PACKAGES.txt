@@ -37,7 +37,6 @@ charset-normalizer
 comtypes
 distro
 docutils
-eppy
 epw
 etabs-api
 ezdxf

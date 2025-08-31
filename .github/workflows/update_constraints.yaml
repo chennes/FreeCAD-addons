@@ -13,7 +13,7 @@ permissions:
 # vector. Compilers, linkers, and build scripts are invoked; a hostile setup.py/backend can run shell
 # commands freely. Only add packages to this list if absolutely necessary.
 env:
-  ALLOW_SDIST_PACKAGES: "hausdorff,ifcopenshell"
+  ALLOW_SDIST_PACKAGES: "hausdorff"
 
 jobs:
   validate:

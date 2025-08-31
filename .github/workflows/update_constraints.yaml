@@ -8,6 +8,13 @@ permissions:
   contents: write
   pull-requests: write
 
+# Explicitly allow-list packages that can be compiled from source and do not require a binary wheel
+# These packages will be allowed to compile from source. Native extension compilation is a code-execution
+# vector. Compilers, linkers, and build scripts are invoked; a hostile setup.py/backend can run shell
+# commands freely. Only add packages to this list if absolutely necessary.
+env:
+  ALLOW_SDIST_PACKAGES: "hausdorff"
+
 jobs:
   validate:
     runs-on: ubuntu-latest

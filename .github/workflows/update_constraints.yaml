@@ -1,0 +1,149 @@
+name: Update constraints-pyXY.txt on PRs
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head (fork)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Validate ALLOWED_PYTHON_PACKAGES.txt
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="ALLOWED_PYTHON_PACKAGES.txt"
+          test -f "$file" || { echo "::error file=$file::File not found"; exit 1; }
+
+          # Only allow comment lines, whitespace, and lines containing JUST a Python package name (no versions, etc.)
+          # Take some extra precautions like limiting the max line length, etc. to prevent strange malicious PRs.
+          LC_ALL=C awk -v maxlen=200 '
+            BEGIN { bad=0 }
+            function trim(s){ sub(/^[ \t]+/,"",s); sub(/[ \t]+$/,"",s); return s }
+            /^[[:space:]]*$/ { next }                  # blank
+            /^[[:space:]]*#/ { next }                   # comment
+            {
+              raw=$0
+              line=trim($0)
+              if (line ~ /^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$/) {
+                key=tolower(line); seen[key]++
+                if (length(line) > maxlen) {
+                  printf("Line %d too long: %s\n", NR, raw) > "/dev/stderr"; bad=1
+                }
+                next
+              }
+              printf("Invalid line %d: %s\n", NR, raw) > "/dev/stderr"; bad=1
+            }
+            END { for (k in seen) if (seen[k] > 1) { printf("Duplicate package: %s\n", k) > "/dev/stderr"; bad=1 } ; exit bad }
+          ' "$file"
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # The Addon Manager current supports the following versions of Python - provide a constraints file for each of them
+        py: ['3.8','3.9','3.10','3.11','3.12','3.13']
+      fail-fast: false
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.py }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+
+      - name: Build venv and freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install \
+            --require-virtualenv \
+            --disable-pip-version-check \
+            --no-cache-dir \
+            --only-binary=:all: \
+            --index-url https://pypi.org/simple \
+            -r ALLOWED_PYTHON_PACKAGES.txt
+          py_tag=$(python - <<'PY'
+import sys; print(f"py{sys.version_info.major}{sys.version_info.minor}")
+PY
+)
+          out="constraints-${py_tag}.txt"
+          pip freeze --exclude-editable > "$out"
+          echo "ARTIFACT_NAME=$out" >> "$GITHUB_ENV"
+
+      - name: Upload constraints artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_NAME }}
+          if-no-files-found: error
+          retention-days: 7
+
+  commit:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head (fork)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Download constraints artifacts
+        uses: actions/download-artifact@v4
+        with:
+          # These names match what the build job emitted
+          pattern: constraints-py*.txt
+          merge-multiple: true
+
+      - name: Commit all constraints in a single commit (only if changed)
+        shell: bash
+        env:
+          PR_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_REF:  ${{ github.event.pull_request.head.ref }}
+          BOT_PUSH_TOKEN: ${{ secrets.BOT_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          git add constraints-py*.txt || true
+          if git diff --staged --quiet; then
+            echo "No changes to constraints files; nothing to commit."
+            exit 0
+          fi
+          git config user.name  "constraints-bot"
+          git config user.email "constraints-bot@users.noreply.github.com"
+          git commit -m "Update per-Python constraints (py38..py313) via CI"
+          repo_url="https://${BOT_PUSH_TOKEN}@github.com/${PR_REPO}.git"
+          git push "${repo_url}" "HEAD:${PR_REF}"
+
+      - name: Comment on PR
+        if: ${{ success() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              issue_number: context.payload.pull_request.number,
+              body: "✅ Regenerated per-version constraints (`constraints-py38.txt` … `constraints-py313.txt`) and pushed a single commit."
+            })

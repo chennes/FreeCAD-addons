@@ -104,7 +104,6 @@ tzlocal
 urllib3
 vedo
 vermin
-voxcity
 xgbxml
 xlrd
 xlutils

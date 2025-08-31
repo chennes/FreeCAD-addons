@@ -73,7 +73,6 @@ posthog
 protobuf
 py-slvs
 pycollada
-pydocx
 pyg4ometry
 pygit2
 pyjwt

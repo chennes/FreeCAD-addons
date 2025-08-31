@@ -79,17 +79,17 @@ jobs:
     steps:
     
       - name: Exclude OpenEXR on py3.13 (no wheels yet)
-        run: |
-          if [[ "${{ matrix.python-version }}" == "3.13" ]]; then
-            echo "EXCLUDE_PACKAGES=${EXCLUDE_PACKAGES},openexr" >> "$GITHUB_ENV"
-          fi
-    
+        if: ${{ matrix.py == '3.13' }}
+        run: echo "EXCLUDE_PACKAGES=${EXCLUDE_PACKAGES},openexr" >> "$GITHUB_ENV"
+
       - name: Checkout PR head
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          submodules: false
+          lfs: false
 
       - name: Set up Python ${{ matrix.py }}
         uses: actions/setup-python@v5
@@ -169,6 +169,8 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          submodules: false
+          lfs: false
 
       - name: Download constraints artifacts
         uses: actions/download-artifact@v4

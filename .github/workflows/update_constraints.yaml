@@ -82,6 +82,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libsuitesparse-dev
+
+      - name: Exclude OpenEXR on py3.13 (no wheels yet)
+        run: |
+          if [[ "${{ matrix.python-version }}" == "3.13" ]]; then
+            echo "EXCLUDE_PACKAGES=${EXCLUDE_PACKAGES},openexr" >> "$GITHUB_ENV"
+          fi
     
       - name: Checkout PR head
         uses: actions/checkout@v4

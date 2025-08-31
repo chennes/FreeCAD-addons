@@ -13,7 +13,6 @@ permissions:
   contents: write
   pull-requests: write
 
-
 env:
   # Explicitly allow-list packages that can be compiled from source and do not require a binary wheel
   # These packages will be allowed to compile from source. Native extension compilation is a code-execution
@@ -58,7 +57,7 @@ jobs:
             BEGIN { bad=0 }
             function trim(s){ sub(/^[ \t]+/,"",s); sub(/[ \t]+$/,"",s); return s }
             /^[[:space:]]*$/ { next }                  # blank
-            /^[[:space:]]*#/ { next }                   # comment
+            /^[[:space:]]*#/ { next }                  # comment
             {
               raw=$0
               line=trim($0)

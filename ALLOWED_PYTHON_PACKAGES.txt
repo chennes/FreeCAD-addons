@@ -2,8 +2,7 @@
 #
 #   𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗣𝘆𝘁𝗵𝗼𝗻 𝗣𝗮𝗰𝗸𝗮𝗴𝗲𝘀
 #   
-#   List of allowed Python packages that 
-#   addons can request to be installed.
+#   List of allowed Python packages that addons can request to be installed automatically by the Addon Manager
 #
 
 #
@@ -14,6 +13,12 @@
 #
 #   Read more details about this file at:
 #   https://github.com/FreeCAD/FreeCAD-addons/blob/master/Documentation/Allowed-Python-Packages.md
+#
+
+#
+#   Any PR making changes to this file will be detected by the CI system and will automatically calculate
+#   new constraints files. Conflicting changes, or packages that don't support all versions, will cause
+#   the CI to fail.
 #
 
 #
@@ -32,20 +37,17 @@ beautifulsoup4
 blinker
 capytaine
 certifi
-certify
 charset-normalizer
 comtypes
+defusedxml
 distro
 docutils
-eppy
+epw
 etabs-api
 ezdxf
 geomdl
 gmsh
-gmsh-dev
-hausdorff
 idna
-ifcopenshell
 ladybug-core
 ladybug-comfort
 ladybug-display
@@ -74,7 +76,6 @@ posthog
 protobuf
 py-slvs
 pycollada
-pydocx
 pyg4ometry
 pygit2
 pyjwt
@@ -84,7 +85,6 @@ pyoptools
 pypresence
 pysolar
 python-dateutil
-python-docx
 python-dotenv
 pyvista
 qtpy
@@ -106,7 +106,6 @@ tzlocal
 urllib3
 vedo
 vermin
-wakatime-cli
 xgbxml
 xlrd
 xlutils

@@ -78,9 +78,9 @@ jobs:
       
     steps:
     
-      - name: Exclude OpenEXR on py3.13 (no wheels yet)
+      - name: Exclude OpenEXR and pyoptools on py3.13 (no wheels yet)
         if: ${{ matrix.py == '3.13' }}
-        run: echo "EXCLUDE_PACKAGES=${EXCLUDE_PACKAGES},openexr" >> "$GITHUB_ENV"
+        run: echo "EXCLUDE_PACKAGES=${EXCLUDE_PACKAGES},openexr,pyoptools" >> "$GITHUB_ENV"
 
       - name: Checkout PR head
         uses: actions/checkout@v4

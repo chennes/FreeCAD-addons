@@ -105,7 +105,6 @@ urllib3
 vedo
 vermin
 voxcity
-wakatime-cli
 xgbxml
 xlrd
 xlutils

@@ -23,7 +23,6 @@
 PyOpenGL
 PyYAML
 aiofiles
-archaea
 asyncua
 atomicwrites
 autobahn

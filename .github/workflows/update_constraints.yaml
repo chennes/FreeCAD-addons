@@ -100,43 +100,39 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
+      
           python -m venv .venv
           source .venv/bin/activate
           python -m pip install --upgrade pip
-
-          # Prepare allowlist for sdists:
-          # - Normalize allowed packages file to a lowercased list of names
+      
+          # Prepare allowlist, native deps, NO_BINARY_ARGS, and prune (unchanged from your file)
           awk '
             /^[[:space:]]*$/ { next }
             /^[[:space:]]*#/ { next }
             { gsub(/^[[:space:]]+|[[:space:]]+$/,"",$0); print tolower($0) }
           ' ALLOWED_PYTHON_PACKAGES.txt > .allowed_names
-
+      
           IFS=',' read -ra NATIVE <<<"${ALLOW_SDIST_NATIVE:-}"
           if (( ${#NATIVE[@]} )); then
             sudo apt-get update
             sudo apt-get install -y libsuitesparse-dev
           fi
-          
-          # build pip args
+      
           NO_BINARY_ARGS=()
           for raw in $(echo "${ALLOW_SDIST_PURE},${ALLOW_SDIST_NATIVE}" | tr ',' ' '); do
             name="$(echo "$raw" | tr 'A-Z' 'a-z' | xargs)"; [[ -z "$name" ]] && continue
             NO_BINARY_ARGS+=( "--no-binary=$name" )
           done
-
-          # prune excluded
+      
           PRUNED=.allowed_pruned.txt
           cp .allowed_names "$PRUNED"
           IFS=',' read -ra EXCL <<<"${EXCLUDE_PACKAGES:-}"
           for raw in "${EXCL[@]}"; do
-            name="$(echo "$raw" | tr 'A-Z' 'a-z' | xargs)"
-            [[ -z "$name" ]] && continue
+            name="$(echo "$raw" | tr 'A-Z' 'a-z' | xargs)"; [[ -z "$name" ]] && continue
             grep -Fvx "$name" "$PRUNED" > "$PRUNED.tmp" && mv "$PRUNED.tmp" "$PRUNED"
           done
-
-          # Install: wheels-only for everything, except allowlisted sdists
+      
+          # Install with wheels-only except for allowlisted sdists
           pip install \
             --require-virtualenv \
             --disable-pip-version-check \
@@ -145,11 +141,17 @@ jobs:
             "${NO_BINARY_ARGS[@]}" \
             --index-url https://pypi.org/simple \
             -r "$PRUNED"
-
+      
           py_tag=$(python -c 'import sys; print(f"py{sys.version_info.major}{sys.version_info.minor}")')
-          out="constraints-${py_tag}.txt"
-          pip freeze --exclude-editable > "$out"
-          echo "ARTIFACT_NAME=$out" >> "$GITHUB_ENV"
+          mkdir -p constraints
+          out_basename="constraints-${py_tag}.txt"
+          out_path="constraints/${out_basename}"
+      
+          pip freeze --exclude-editable > "$out_path"
+      
+          # Expose both basename (artifact name) and path (artifact file)
+          echo "ARTIFACT_NAME=$out_basename" >> "$GITHUB_ENV"
+          echo "ARTIFACT_PATH=$out_path" >> "$GITHUB_ENV"
           
       - name: Upload constraints artifact
         uses: actions/upload-artifact@v4

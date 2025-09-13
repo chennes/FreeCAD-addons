@@ -105,7 +105,7 @@ jobs:
           source .venv/bin/activate
           python -m pip install --upgrade pip
       
-          # Prepare allowlist, native deps, NO_BINARY_ARGS, and prune (unchanged from your file)
+          # Prepare allowlist, native deps, NO_BINARY_ARGS, and prune
           awk '
             /^[[:space:]]*$/ { next }
             /^[[:space:]]*#/ { next }
@@ -156,8 +156,8 @@ jobs:
       - name: Upload constraints artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.ARTIFACT_NAME }}
+          name: ${{ env.ARTIFACT_NAME }}   # e.g., constraints-py312.txt
+          path: ${{ env.ARTIFACT_PATH }}   # e.g., constraints/constraints-py312.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -177,9 +177,9 @@ jobs:
       - name: Download constraints artifacts
         uses: actions/download-artifact@v4
         with:
-          # These names match what the build job emitted
           pattern: constraints-py*.txt
           merge-multiple: true
+          path: constraints
 
       - name: Commit all constraints in a single commit (only if changed)
         shell: bash
@@ -189,7 +189,7 @@ jobs:
           BOT_PUSH_TOKEN: ${{ secrets.BOT_PUSH_TOKEN }}
         run: |
           set -euo pipefail
-          git add constraints-py*.txt || true
+          git add constraints/*.txt || true
           if git diff --staged --quiet; then
             echo "No changes to constraints files; nothing to commit."
             exit 0

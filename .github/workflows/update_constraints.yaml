@@ -1,5 +1,10 @@
 name: Update constraints-pyXY.txt on PRs
 
+# When the ALLOWED_PYTHON_PACKAGES.txt file changes, update all of our constraints files on a per-Python-version
+# basis. Right now, if a package is not available for a particular version, that will cause it to fail CI.
+# Eventually this system will need to be modified such that we have ALLOWED_PYTHON_PACKAGES files on a per-version
+# basis as well.
+
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -45,6 +50,8 @@ jobs:
           file="ALLOWED_PYTHON_PACKAGES.txt"
           test -f "$file" || { echo "::error file=$file::File not found"; exit 1; }
 
+          # AI-assisted awk-script generation:
+          #
           # Only allow comment lines, whitespace, and lines containing JUST a Python package name (no versions, etc.)
           # Take some extra precautions like limiting the max line length, etc. to prevent strange malicious PRs.
           LC_ALL=C awk -v maxlen=200 '
@@ -72,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # The Addon Manager current supports the following versions of Python - provide a constraints file for each of them
+        # The Addon Manager currently supports the following versions of Python - provide a constraints file for each of them
         py: ['3.8','3.9','3.10','3.11','3.12','3.13']
       fail-fast: false
       
@@ -194,9 +201,9 @@ jobs:
             echo "No changes to constraints files; nothing to commit."
             exit 0
           fi
-          git config user.name  "constraints-bot"
-          git config user.email "constraints-bot@users.noreply.github.com"
-          git commit -m "Update per-Python constraints (py38..py313) via CI"
+          git config user.name  "freecad-constraints-bot"
+          git config user.email "freecad-constraints-bot@users.noreply.github.com"
+          git commit -m "Update constraints based on revised ALLOWED_PYTHON_PACKAGES.txt content"
           repo_url="https://${BOT_PUSH_TOKEN}@github.com/${PR_REPO}.git"
           git push "${repo_url}" "HEAD:${PR_REF}"
 
@@ -209,5 +216,5 @@ jobs:
               owner: context.payload.repository.owner.login,
               repo: context.payload.repository.name,
               issue_number: context.payload.pull_request.number,
-              body: "✅ Regenerated per-version constraints (`constraints-py38.txt` … `constraints-py313.txt`) and pushed a single commit."
+              body: "🤖 Constraints Bot: regenerated the constraints files and added a commit with the changes"
             })

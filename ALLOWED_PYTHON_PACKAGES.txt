@@ -2,8 +2,7 @@
 #
 #   𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗣𝘆𝘁𝗵𝗼𝗻 𝗣𝗮𝗰𝗸𝗮𝗴𝗲𝘀
 #   
-#   List of allowed Python packages that 
-#   addons can request to be installed.
+#   List of allowed Python packages that addons can request to be installed.
 #
 
 #
@@ -14,6 +13,11 @@
 #
 #   Read more details about this file at:
 #   https://github.com/FreeCAD/FreeCAD-addons/blob/master/Documentation/Allowed-Python-Packages.md
+#
+
+#
+#   NOTE: Any PR that changes this file will trigger an update to the constraints files used to
+#   ensure that conflicting package versions are not installed by the Addon Manager.
 #
 
 #
@@ -41,7 +45,6 @@ etabs-api
 ezdxf
 geomdl
 gmsh
-hausdorff
 idna
 ladybug-core
 ladybug-comfort
@@ -80,7 +83,6 @@ pyoptools
 pypresence
 pysolar
 python-dateutil
-python-docx
 python-dotenv
 pyvista
 qtpy
